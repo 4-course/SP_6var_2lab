@@ -5,11 +5,40 @@ Conditioner *conditioner;
 
 HWND powerButton, workButton, modeButton;
 
+int getTimeSixe() {
+    int time = conditioner->getTime();
+    int size = 1;
+    while (time > 0) {
+        time /= 10;
+        size++;
+    }
+    return size;
+}
+
+void setTimer(HWND hWnd) {
+    PAINTSTRUCT ps;
+    HDC hdc = BeginPaint(hWnd, &ps);
+
+    HFONT timerFont = CreateFont(44, 20, 0, 0, FW_NORMAL, false, false, false, DEFAULT_CHARSET,
+                           OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas");
+    SelectObject(hdc, timerFont);
+
+    SetBkColor(hdc, RGB(0, 0, 0));
+    SetTextColor(hdc, RGB(0, 255, 0));
+    wchar_t istr[256];
+    _itow_s(conditioner->getTime(), istr, 10);
+    TextOut(hdc, 10, 10, istr, 1);
+
+    DeleteObject(timerFont);
+    EndPaint(hWnd, &ps);
+}
+
 LRESULT CALLBACK WindowProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     HDC hdc;
     HINSTANCE hInst;
-    HFONT font, timerFont;
+    HFONT font;
     HBRUSH rectBrush;
+    HFONT timerFont;
     PAINTSTRUCT ps;
     RECT window;
     switch (uMsg) {
@@ -37,15 +66,17 @@ LRESULT CALLBACK WindowProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             SetRect(&window, 5, 10, 230, 55);
             FillRect(hdc, &window, rectBrush);
 
-            timerFont = CreateFont(44, 20, 0, 0, FW_NORMAL, false, false, false, DEFAULT_CHARSET, 
-                                   OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas");
+            timerFont = CreateFont(44, 20, 0, 0, FW_NORMAL, false, false, false, DEFAULT_CHARSET,
+                                         OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas");
             SelectObject(hdc, timerFont);
 
-            SetBkColor(hdc, RGB(0,0,0));
+            SetBkColor(hdc, RGB(0, 0, 0));
             SetTextColor(hdc, RGB(0, 255, 0));
             wchar_t istr[256];
             _itow_s(conditioner->getTime(), istr, 10);
-            TextOut(hdc, 10, 10, istr, 1);
+            TextOut(hdc, 10, 10, istr, getTimeSixe());
+
+            DeleteObject(timerFont);
 
             SetBkColor(hdc, RGB(255, 255, 255));
             SetTextColor(hdc, RGB(0, 0, 0));
@@ -56,7 +87,6 @@ LRESULT CALLBACK WindowProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             TextOut(hdc, 30, 200, L"Режим:", 6);
 
             DeleteObject(font);
-            DeleteObject(timerFont);
             DeleteObject(rectBrush);
 
             EndPaint(hWnd, &ps);
@@ -72,14 +102,18 @@ LRESULT CALLBACK WindowProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 }
                 else {
                     conditioner->changePower();
-
                     SetWindowText(powerButton, L"включено");
                     EnableWindow(workButton, TRUE);
                     EnableWindow(modeButton, FALSE);
                 }
             }
             else if (lParam == (LPARAM)workButton) {
-
+                conditioner->addWork();
+                while(conditioner->getTime()>=0) {
+                    RedrawWindow(hWnd, NULL, NULL, RDW_UPDATENOW | RDW_INVALIDATE);
+                    conditioner->minusWork();
+                    Sleep(100);
+                }
             }
             else if (lParam == (LPARAM)modeButton) {
                 conditioner->changeMode();
@@ -134,7 +168,7 @@ int WINAPI WinMain(HINSTANCE hInst,
 
     checkIsCLassRegistered(mainWindowClass);
 
-    //mainWindow = CreateWindow(mainWindowClass.lpszClassName, L"Пульт", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX,
+    //mainWindow = CreateWindow(mainWindowClass.lpszClassName, L"Пульт", WS_HSCROLL | WS_VSCROLL |WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX,
                               //(screenWidth - mainWindowWidth) / 2, (screenHeight - mainWindowHeight) / 2, mainWindowWidth, mainWindowHeight, NULL, NULL, hInst, NULL);
     mainWindow = CreateWindow(mainWindowClass.lpszClassName, L"Пульт", WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU,
                               (screenWidth - mainWindowWidth) / 2, (screenHeight - mainWindowHeight) / 2, mainWindowWidth, mainWindowHeight, NULL, NULL, hInst, NULL);

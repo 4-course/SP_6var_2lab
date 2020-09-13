@@ -1,3 +1,4 @@
+#include <windows.h>
 #include "Conditioner.h"
 
 Conditioner::Conditioner () {
@@ -7,8 +8,12 @@ Conditioner::Conditioner () {
 	time = 0;
 }
 
-void Conditioner::changeWork () {
+void Conditioner::addWork () {
+	time += 60;
+}
 
+void Conditioner::minusWork () {
+	time--;
 }
 
 void Conditioner::changePower() {

@@ -10,7 +10,8 @@ class Conditioner {
 	modeType mode;
 	public:
 	Conditioner ();
-	void changeWork();
+	void addWork();
+	void minusWork();
 	void changePower ();
 	void changeMode ();
 	int getTime();
