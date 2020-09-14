@@ -15,22 +15,13 @@ int getTimeSixe() {
     return size;
 }
 
-void setTimer(HWND hWnd) {
-    PAINTSTRUCT ps;
-    HDC hdc = BeginPaint(hWnd, &ps);
-
-    HFONT timerFont = CreateFont(44, 20, 0, 0, FW_NORMAL, false, false, false, DEFAULT_CHARSET,
-                           OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, L"Consolas");
-    SelectObject(hdc, timerFont);
-
-    SetBkColor(hdc, RGB(0, 0, 0));
-    SetTextColor(hdc, RGB(0, 255, 0));
-    wchar_t istr[256];
-    _itow_s(conditioner->getTime(), istr, 10);
-    TextOut(hdc, 10, 10, istr, 1);
-
-    DeleteObject(timerFont);
-    EndPaint(hWnd, &ps);
+DWORD WINAPI minusWork(LPVOID hWnd) {
+    while (conditioner->getTime() >= 0) {
+        RedrawWindow((HWND)hWnd, NULL, NULL, RDW_UPDATENOW | RDW_INVALIDATE);
+        conditioner->minusWork();
+        Sleep(100);
+    }
+    return 0;
 }
 
 LRESULT CALLBACK WindowProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -109,11 +100,8 @@ LRESULT CALLBACK WindowProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             }
             else if (lParam == (LPARAM)workButton) {
                 conditioner->addWork();
-                while(conditioner->getTime()>=0) {
-                    RedrawWindow(hWnd, NULL, NULL, RDW_UPDATENOW | RDW_INVALIDATE);
-                    conditioner->minusWork();
-                    Sleep(100);
-                }
+                CreateThread(NULL, 0, minusWork, hWnd, 0, NULL);
+                
             }
             else if (lParam == (LPARAM)modeButton) {
                 conditioner->changeMode();
